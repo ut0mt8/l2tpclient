@@ -1,15 +1,15 @@
-#!/usr/local/bin/python2.7
+#!/usr/bin/python
 
 import os, socket, select, signal, errno, pty, tty, termios, fcntl, sys, time, binascii, struct, md5
 
 # some config
 DEBUG    = False
-HOSTNAME = 'lateralus'
+HOSTNAME = 'hostname'
 VENDOR   = 'pyl2tp'
-LNSHOST  = '85.158.112.98'
+LNSHOST  = 'some.lns.com'
 LNSPORT  = 1701
-SECRET   = 'ipnosrfr508'
-USERNAME = 'cpe1-RAF@redback-neuf-cegetel'
+SECRET   = 'asecret'
+USERNAME = 'user@realm'
 TIMEOUT  = 60
 
 
@@ -100,7 +100,7 @@ class L2tpClient(object):
             avp_offset += 4
 
         if ptype == '0': # data packet
-            # print write to pppd
+            # write to pppd
             data = buf[header_offset:]
             try:
                 async_buf = self.pppd_sync_to_async(data)
@@ -119,7 +119,7 @@ class L2tpClient(object):
                 avp_tunnel_id = 0
                 avp_challenge = ''
 
-                # if not zlb increment nr of the next packet
+                # if not a ZLB increment nr of the next packet
                 self.nr = ns + 1
 
                 # parse avp
@@ -354,7 +354,7 @@ class L2tpClient(object):
         avp_data = ''
         # Incoming_Call_Request
         avp_data += self.make_avp(attr_type=0, attr_value=10)
-        # Assigned Session 
+        # Assigned Session FIXME need to be random
         avp_data += self.make_avp(attr_type=14, attr_value=39849)
         # Call Serial Number
         avp_data += self.make_avp(attr_type=15, avp_len=10, attr_value1=0, attr_value2=1)
@@ -413,7 +413,7 @@ class L2tpClient(object):
         PPP_ESCAPE=0x7d
         PPP_TRANS=0x20
 
-        # ppp_flag at the beginning/and of a frame ?
+        # ppp_flag at the beginning/end of a frame ?
         fs0 = frame.startswith(chr(PPP_FLAG))
         fs1 = frame.endswith(chr(PPP_FLAG))
         if fs0 and fs1:
@@ -523,10 +523,10 @@ class L2tpClient(object):
                 p = os.ttyname(self.pppd_fd)
                 print ">> the terminal device associated is: %s" % p
                 set_non_blocking(self.pppd_fd)
-
+                
+                # main loop
                 while True:
 
-                    # main select
                     read = []
                     inputs = [self.pppd_fd, self.sock]
                     try:
@@ -550,13 +550,11 @@ class L2tpClient(object):
 
                             sync_buf = self.pppd_async_to_sync(buf)
                             if sync_buf != None:
-                                #print binascii.hexlify(sync_buf)
                                 # write an l2tp data frame
                                 data = self.make_data(sync_buf)
                                 if self.debug:
                                     print "> sending data packet"
                                 self.send_packet(data)
-                                #print binascii.hexlify(data)
                             
                         except OSError, se:
                             if se.args[0] not in (errno.EAGAIN, errno.EINTR):
@@ -583,7 +581,7 @@ class L2tpClient(object):
 
 
     def initial_loop (self):
-        while 1:    
+        while True:    
             # Send initial SCCRQ
             self.ns = 0
             data = self.make_sccrq()
