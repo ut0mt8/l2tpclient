@@ -6,4 +6,4 @@ Limited to only one tunnel and one session.
 Relies on pppd for ppp connectivity.
 Know to work with xl2tpd and Redback LNS implementation.
 Tested on Linux, and OpenBSD 
-(warning MTU on OpenBSD need to be at most 850, cause of an the 1024 tty buffer hardcoded, or patch your kernel)
+(warning MTU on OpenBSD need to be at most 850, cause of the 1024 lentgh buffer hardcoded in the tty code, or patch your kernel)
